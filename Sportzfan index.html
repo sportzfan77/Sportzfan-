@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sportzfan</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body, html { height:100%; font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; overflow-y:auto; }
+    
+    .glow-text { text-shadow: 0 0 10px #00d2ff, 0 0 20px #00d2ff; }
+    
+    #splash { position: fixed; inset: 0; background:#0044cc; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:99999; }
+    #splashLogo { width: 120px; height: 120px; margin-bottom: 20px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 20px #00d2ff; }
+    
+    #adScreen { position: fixed; inset: 0; background: linear-gradient(135deg, #001a4d, #0044cc); z-index: 99998; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #adImage { width: 90%; max-width: 400px; height: 250px; background: #eee; border-radius: 20px; margin-bottom: 30px; border: 4px solid #fff; object-fit: cover; }
+    #seeAdsBtn { padding: 18px 60px; background: #fff; color: #0044cc; border: none; border-radius: 50px; font-size: 1.5rem; cursor: pointer; font-weight: 900; box-shadow: 0 0 15px #fff; }
+    
+    #loadingOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:100002; align-items:center; justify-content:center; flex-direction:column; }
+    .spinner { border: 5px solid #00d2ff; border-top: 5px solid transparent; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    #inAppBrowser { position: fixed; inset: 0; background: #fff; z-index: 1000000; display: none; flex-direction: column; }
+    #timerBox { padding: 20px; background: #000; color: #00d2ff; text-align: center; border-bottom: 2px solid #00d2ff; font-size: 1.5rem; font-weight: bold; box-shadow: 0 0 15px #00d2ff; }
+    
+    #videoContainer { display:none; position:fixed; inset:0; z-index:100000; background:#000; overflow:hidden; }
+    #videoWrapper { position: absolute; top: -20%; left: 0; width: 100%; height: 220%; }
+    
+    #backBtn { position:absolute; top:20px; left:20px; z-index:100001; padding:10px 20px; background:rgba(0,0,0,0.6); color:#fff; border:none; cursor:pointer; font-weight:bold; }
+
+    header { position:fixed; top:0; left:0; right:0; height:60px; background:#0044cc; display:flex; align-items:center; justify-content:center; z-index:1000; gap: 10px; box-shadow: 0 2px 10px #00d2ff; }
+    #headerLogo { width: 35px; height: 35px; border-radius: 50%; border: 1px solid #fff; }
+    #menuBtn { position:absolute; left:20px; cursor:pointer; font-size: 1.8rem; }
+    
+    #telegramBtn { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+    #telegramBtn img { width: 55px; height: 55px; border-radius: 50%; box-shadow: 0 0 15px #00d2ff; }
+
+    #sidebar { position:fixed; top:60px; bottom:0; left:-300px; width:280px; background:#111; transition:.4s; z-index:1000; padding:20px; border-right: 2px solid #00d2ff; box-shadow: 5px 0 15px #00d2ff; }
+    #sidebar.open { left:0; }
+    .navLink { display:block; padding:15px; color:#fff; font-weight:bold; border-bottom:1px solid #333; cursor:pointer; transition:0.3s; }
+    .navLink:hover { color: #00d2ff; text-shadow: 0 0 8px #00d2ff; }
+
+    .teamLogo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #00d2ff; padding: 2px; background: #fff; }
+    .matchBox { background:#111; border-radius:15px; padding:15px; margin-bottom:15px; cursor:pointer; border: 2px solid #0044cc; transition: 0.3s; text-align: center;}
+    .matchBox:hover { border-color: #00d2ff; box-shadow: 0 0 15px #00d2ff; }
+    .match-info { font-size: 0.9rem; margin-top: 10px; color: #aaa; }
+    .match-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 8px; color: #00d2ff; }
+  </style>
+</head>
+<body>
+
+  <div id="splash"><img id="splashLogo" src="https://i.ibb.co.com/gLHT46gV/logo.png"><h1 class="glow-text">Sportzfan</h1></div>
+
+  <a id="telegramBtn" href="https://t.me/sportzfanOffecial" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg">
+  </a>
+
+  <div id="adScreen">
+    <img id="adImage" src="https://i.ibb.co.com/XZKb313W/ad.jpg">
+    <button id="seeAdsBtn" onclick="startAdProcess()">See Ads</button>
+  </div>
+
+  <div id="loadingOverlay"><div class="spinner"></div><p style="margin-top:10px; color:#00d2ff;">Loading...</p></div>
+
+  <div id="inAppBrowser">
+    <div id="timerBox">
+        Wait: <span id="timerDisplay">15s</span>
+        <button id="closeAdBtn" onclick="exitAd()" style="display:none; margin-left:15px; padding:5px 15px; border-radius:5px; border:none; cursor:pointer;">Close</button>
+    </div>
+    <iframe id="browserIframe" src="about:blank" style="width:100%; flex-grow:1; border:none;"></iframe>
+  </div>
+
+  <div id="videoContainer">
+    <button id="backBtn" onclick="closeVideo()">← Back</button>
+    <div id="videoWrapper"></div>
+  </div>
+
+  <header>
+    <span id="menuBtn" onclick="document.getElementById('sidebar').classList.add('open')">&#9776;</span>
+    <img id="headerLogo" src="https://i.ibb.co.com/gLHT46gV/logo.png">
+    <span class="app-title glow-text" style="font-weight:bold; font-size:1.2rem;">Sportzfan</span>
+  </header>
+
+  <div id="sidebar">
+    <div onclick="document.getElementById('sidebar').classList.remove('open')" style="text-align:right; cursor:pointer; font-size:1.5rem; color:#00d2ff;">✕</div>
+    <div class="navLink" onclick="renderMatches('live')">Live Matches</div>
+    <div class="navLink" onclick="renderMatches('highlights')">Match Highlights</div>
+  </div>
+
+  <div id="content" style="margin-top:80px; padding:20px; padding-bottom:50px;"><div id="mainView"></div></div>
+
+  <script>
+    setTimeout(() => { document.getElementById('splash').style.display = 'none'; document.getElementById('adScreen').style.display = 'flex'; }, 3000);
+
+    function startAdProcess() {
+        document.getElementById('browserIframe').src = "https://www.effectivecpmnetwork.com/i8g3eqcx?key=3934e362c15a3102503b462ba3b3f389";
+        document.getElementById('inAppBrowser').style.display = 'flex';
+        let t = 15;
+        const timer = setInterval(() => {
+            t--; document.getElementById('timerDisplay').innerText = t + "s";
+            if (t <= 0) { clearInterval(timer); document.getElementById('closeAdBtn').style.display = 'inline-block'; }
+        }, 1000);
+    }
+    function exitAd() { document.getElementById('inAppBrowser').style.display = 'none'; document.getElementById('adScreen').style.display = 'none'; }
+
+    function openVideo(url, isYt) {
+        if(isYt) {
+            window.open(url.replace('embed/', 'watch?v='), '_blank');
+        } else {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('videoWrapper').innerHTML = `<iframe src="${url}" style="width:100%; height:100%;" frameborder="0" allowfullscreen></iframe>`;
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.getElementById('videoContainer').style.display = 'block';
+            }, 1500);
+        }
+    }
+    function closeVideo() { document.getElementById('videoContainer').style.display = 'none'; document.getElementById('videoWrapper').innerHTML = ''; }
+
+    const data = {
+      live: [
+        { name1: 'France', name2: 'Senegal', tournament: 'FIFA World Cup 2026', time: '17 June,01:00 AM', t1: 'https://data2.nssmag.com/images/galleries/17211/cover/thumb-257610-cms-new-large-article_v1.jpeg', t2: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/16/Senegalese_Football_Federation_logo.svg/1280px-Senegalese_Football_Federation_logo.svg.png', url: 'https://sportzfytvlive.xyz/watch/Lpxqk597rkh7kwz5799vr97r779n9hz3', isYt: false },
+        { name1: 'Iraq', name2: 'Norway', tournament: 'FIFA World Cup 2026', time: '17 June, 04:00 AM', t1: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Iraq_National_Team_Badge_2021_v1.svg/250px-Iraq_National_Team_Badge_2021_v1.svg.png', t2: 'https://upload.wikimedia.org/wikipedia/en/thumb/6/6c/Norway_national_football_team_logo.svg/960px-Norway_national_football_team_logo.svg.png', url: 'https://sportzfytvlive.xyz/watch/Lpxqk597rkh7kwz5799vr97r779n9hz3', isYt: false },
+        { name1: 'Argentina', name2: 'Algeria', tournament: 'FIFA World Cup 2026', time: '17 June, 07:00 AM', t1: 'https://upload.wikimedia.org/wikipedia/en/thumb/c/c1/Argentina_national_football_team_logo.svg/960px-Argentina_national_football_team_logo.svg.png', t2: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwaSzsmEsntpFzKh7nBJC4ogDtJZY5HfDUmttj4ZK2uw&s', url: 'https://sportzfytvlive.xyz/watch/Lpxqk597rkh7kwz5799vr97r779n9hz3', isYt: false },
+        { name1: 'Austria', name2: 'Jordan', tournament: 'FIFA World Cup 2026', time: '17 June, 10:00 AM', t1: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b7/Austria_national_football_team_crest.svg/960px-Austria_national_football_team_crest.svg.png', t2: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Jordan_national_football_team_logo_2024.svg/960px-Jordan_national_football_team_logo_2024.svg.png', url: 'https://sportzfytvlive.xyz/watch/Lpxqk597rkh7kwz5799vr97r779n9hz3', isYt: false },
+        { name1: 'Portugal', name2: 'DR Congo', tournament: 'FIFA World Cup 2026', time: '17 June, 11:00 PM', t1: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTmtUVIu18ns8ByTf3MQZQhHFsnnpr6WvvRTAgfKUBDzg&s', t2: 'https://cdn.prod.website-files.com/68f550992570ca0322737dc2/68fd1b5686f6b5187fb4b28d_dr-congo-footballlogos-org.png', url: 'https://sportzfytvlive.xyz/watch/Lpxqk597rkh7kwz5799vr97r779n9hz3', isYt: false }
+      ],
+      highlights: [
+        { t1: 'https://cdn-icons-png.flaticon.com/512/3373/3373200.png', t2: 'https://cdn-icons-png.flaticon.com/512/3373/3373200.png', url: 'https://www.youtube.com/embed/84xvEwRc0iQ', isYt: true }
+      ]
+    };
+
+    function renderMatches(type) {
+      document.getElementById('sidebar').classList.remove('open');
+      const v = document.getElementById('mainView');
+      v.innerHTML = `<h3 class="glow-text">${type.toUpperCase()}</h3><br>`;
+      data[type].forEach(m => {
+        const b = document.createElement('div');
+        b.className = 'matchBox';
+        if(type === 'live') {
+            b.innerHTML = `
+                <div class="match-title">${m.name1} vs ${m.name2}</div>
+                <div style="display:flex; justify-content:center; align-items:center; gap:20px;">
+                    <img src="${m.t1}" class="teamLogo"><span>VS</span><img src="${m.t2}" class="teamLogo">
+                </div>
+                <div class="match-info">${m.tournament} | ${m.time}</div>
+            `;
+        } else {
+            b.innerHTML = `<img src="${m.t1}" class="teamLogo"><span>VS</span><img src="${m.t2}" class="teamLogo">`;
+        }
+        b.onclick = () => openVideo(m.url, m.isYt);
+        v.appendChild(b);
+      });
+    }
+    renderMatches('live');
+  </script>
+</body>
+</html>
